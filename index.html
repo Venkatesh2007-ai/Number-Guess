@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NumberQuest - An ultra-sleek, interactive number guessing game with dynamic hot-and-cold feedback, custom difficulty levels, hints, and sound effects.">
+  <title>NumberQuest — Interactive Number Guessing Game</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient background elements -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+  <canvas id="particles-canvas" class="particles-canvas"></canvas>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-group">
+        <div class="logo-icon">
+          <span>?</span>
+        </div>
+        <div>
+          <h1 class="logo-title">Number<span>Quest</span></h1>
+          <p class="logo-tagline">Crack the secret code before attempts run out</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <button id="sound-toggle-btn" class="icon-btn" aria-label="Toggle sound effects" title="Toggle Sound">
+          <svg id="sound-icon-on" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <svg id="sound-icon-off" class="svg-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+
+        <button id="how-to-play-btn" class="icon-btn" aria-label="How to play instructions" title="How to Play">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </button>
+
+        <button id="reset-stats-btn" class="icon-btn" aria-label="Reset stats" title="Reset Stats">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Top Statistics Strip -->
+    <section class="stats-strip" aria-label="Player Statistics">
+      <div class="stat-card">
+        <span class="stat-label">GAMES WON</span>
+        <span id="stat-wins" class="stat-value">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">WIN STREAK</span>
+        <span id="stat-streak" class="stat-value">0 🔥</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">BEST SCORE</span>
+        <span id="stat-best" class="stat-value">—</span>
+      </div>
+    </section>
+
+    <!-- Difficulty Selector Tabs -->
+    <section class="difficulty-section" aria-label="Difficulty selection">
+      <div class="difficulty-tabs" role="tablist">
+        <button role="tab" class="diff-tab active" data-difficulty="easy" id="tab-easy">
+          <span class="diff-name">EASY</span>
+          <span class="diff-range">1 – 50</span>
+        </button>
+        <button role="tab" class="diff-tab" data-difficulty="medium" id="tab-medium">
+          <span class="diff-name">CLASSIC</span>
+          <span class="diff-range">1 – 100</span>
+        </button>
+        <button role="tab" class="diff-tab" data-difficulty="hard" id="tab-hard">
+          <span class="diff-name">HARD</span>
+          <span class="diff-range">1 – 250</span>
+        </button>
+        <button role="tab" class="diff-tab" data-difficulty="custom" id="tab-custom">
+          <span class="diff-name">CUSTOM</span>
+          <span class="diff-range">Custom Range</span>
+        </button>
+      </div>
+
+      <!-- Custom Config Panel (Hidden by default) -->
+      <div id="custom-config-panel" class="custom-config-panel hidden">
+        <div class="custom-inputs">
+          <div class="input-field">
+            <label for="custom-min">Min</label>
+            <input type="number" id="custom-min" value="1" min="1" max="9999">
+          </div>
+          <div class="input-field">
+            <label for="custom-max">Max</label>
+            <input type="number" id="custom-max" value="500" min="2" max="10000">
+          </div>
+          <div class="input-field">
+            <label for="custom-attempts">Attempts</label>
+            <input type="number" id="custom-attempts" value="10" min="1" max="50">
+          </div>
+          <button id="apply-custom-btn" class="btn btn-secondary">Apply & Start</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Game Board Card -->
+    <main class="game-card" id="main-game-card">
+      <!-- Target Mystery Display & Active Search Window -->
+      <div class="mystery-stage">
+        <div class="possible-range-badge" id="possible-range-badge">
+          Possible Range: <strong id="range-min-display">1</strong> – <strong id="range-max-display">100</strong>
+        </div>
+
+        <div class="mystery-orb" id="mystery-orb">
+          <div class="orb-inner">
+            <span id="mystery-number-text">?</span>
+          </div>
+          <div class="orb-rings"></div>
+        </div>
+
+        <!-- Dynamic Hot / Cold Temperature Meter -->
+        <div class="temp-meter-container" id="temp-meter-container">
+          <div class="temp-meter-bar">
+            <div id="temp-meter-fill" class="temp-meter-fill"></div>
+          </div>
+          <div class="temp-meter-meta">
+            <span id="proximity-text" class="proximity-text">Make your first guess!</span>
+            <span id="temperature-badge" class="temperature-badge hidden">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attempts Remaining Indicators -->
+      <div class="attempts-section">
+        <div class="attempts-header">
+          <span class="attempts-caption">Attempts Remaining</span>
+          <span class="attempts-count-badge">
+            <strong id="attempts-left-count">7</strong> of <span id="attempts-total-count">7</span>
+          </span>
+        </div>
+        <div class="hearts-track" id="hearts-track">
+          <!-- Filled dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Feedback Banner Message -->
+      <div id="feedback-banner" class="feedback-banner" role="status" aria-live="polite">
+        <div class="feedback-icon" id="feedback-icon">🎯</div>
+        <div class="feedback-text-wrap">
+          <p class="feedback-title" id="feedback-title">I'm thinking of a number...</p>
+          <p class="feedback-subtitle" id="feedback-subtitle">Enter your guess below to start narrowing it down.</p>
+        </div>
+      </div>
+
+      <!-- Guess Input Controls -->
+      <form id="guess-form" class="guess-form" onsubmit="return false;">
+        <div class="guess-input-wrapper">
+          <button type="button" id="decrement-guess-btn" class="stepper-btn" aria-label="Decrease guess by 1">−</button>
+          <input 
+            type="number" 
+            id="guess-input" 
+            class="guess-input" 
+            placeholder="Enter number..." 
+            autocomplete="off" 
+            required 
+            aria-label="Guess number"
+          />
+          <button type="button" id="increment-guess-btn" class="stepper-btn" aria-label="Increase guess by 1">+</button>
+        </div>
+
+        <div class="action-buttons">
+          <button type="submit" id="submit-guess-btn" class="btn btn-primary">
+            <span>Submit Guess</span>
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+          <button type="button" id="hint-btn" class="btn btn-hint" title="Use a detective hint (costs 1 attempt)">
+            <span>💡 Hint</span>
+            <span class="hint-cost-pill">-1 attempt</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Quick Hint Display Box -->
+      <div id="hint-box" class="hint-box hidden">
+        <div class="hint-header">
+          <span class="hint-tag">DETECTIVE INTEL</span>
+          <button id="close-hint-btn" class="close-hint-btn" aria-label="Close hint">&times;</button>
+        </div>
+        <p id="hint-content" class="hint-content"></p>
+      </div>
+
+      <!-- History of Guesses (Timeline) -->
+      <section class="history-section">
+        <div class="history-header">
+          <h2 class="history-title">Guess History</h2>
+          <span id="history-count" class="history-count">0 guesses</span>
+        </div>
+        <div id="guess-history-list" class="guess-history-list">
+          <div class="empty-history-placeholder">No guesses made yet. Go ahead and take your shot!</div>
+        </div>
+      </section>
+
+      <!-- Game Actions Footer -->
+      <div class="game-footer">
+        <button id="new-game-btn" class="btn btn-ghost">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          <span>Restart Game</span>
+        </button>
+
+        <button id="give-up-btn" class="btn btn-ghost text-danger">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          <span>Reveal Answer</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- Victory / Defeat Modal -->
+    <div id="game-over-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-card">
+        <div id="modal-badge-icon" class="modal-badge-icon">🏆</div>
+        <h2 id="modal-title" class="modal-title">Victory!</h2>
+        <p id="modal-subtitle" class="modal-subtitle">You cracked the secret code in 4 attempts!</p>
+
+        <!-- Stars Rating Display -->
+        <div id="modal-stars" class="modal-stars">
+          <span class="star filled">★</span>
+          <span class="star filled">★</span>
+          <span class="star filled">★</span>
+        </div>
+
+        <div class="modal-stats-box">
+          <div class="modal-stat-item">
+            <span class="modal-stat-label">Secret Number</span>
+            <span id="modal-secret-num" class="modal-stat-value highlight">—</span>
+          </div>
+          <div class="modal-stat-item">
+            <span class="modal-stat-label">Guesses Used</span>
+            <span id="modal-guesses-used" class="modal-stat-value">—</span>
+          </div>
+          <div class="modal-stat-item">
+            <span class="modal-stat-label">Accuracy Score</span>
+            <span id="modal-accuracy" class="modal-stat-value">—</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="modal-play-again-btn" class="btn btn-primary btn-large">
+            <span>Play Again</span>
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+          </button>
+          <button id="modal-close-btn" class="btn btn-secondary">Review Board</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- How to Play Modal -->
+    <div id="how-to-play-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="htp-title">
+      <div class="modal-card modal-info">
+        <div class="modal-info-header">
+          <h2 id="htp-title" class="modal-title" style="font-size: 1.5rem;">How To Play NumberQuest</h2>
+          <button id="htp-close-x" class="close-hint-btn" aria-label="Close instructions">&times;</button>
+        </div>
+        <div class="rules-list">
+          <div class="rule-item">
+            <div class="rule-icon">🎯</div>
+            <div>
+              <strong>Objective</strong>
+              <p>Guess the secret randomly generated number within the permitted attempts.</p>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon">🌡️</div>
+            <div>
+              <strong>Hot / Cold Gauge</strong>
+              <p>The proximity thermometer measures how close you are. "Boiling" means you're within inches of the answer!</p>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon">🔍</div>
+            <div>
+              <strong>Dynamic Search Window</strong>
+              <p>Every time you guess, the game automatically narrows down the lowest and highest boundary values.</p>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon">💡</div>
+            <div>
+              <strong>Detective Hints</strong>
+              <p>Need a boost? Spend 1 attempt to unlock hints about whether the number is even, odd, or divisible by key factors.</p>
+            </div>
+          </div>
+        </div>
+        <button id="htp-got-it-btn" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Got It, Let's Play!</button>
+      </div>
+    </div>
+
+    <!-- Toast Notification for Quick Alerts -->
+    <div id="toast-notification" class="toast-notification hidden" role="status" aria-live="assertive"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
